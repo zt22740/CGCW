@@ -210,33 +210,29 @@ void drawTexturedLine(CanvasPoint from, CanvasPoint to, TexturePoint fromTP, Tex
 uint32_t getTextureColourPerspective(float alpha, float beta, float gamma, const CanvasTriangle& triangle, TextureMap& textureMap) {
     // Get the depth values at each vertex
     float w1 = 1.0f / std::max(0.001f, triangle[0].depth);
-float w2 = 1.0f / std::max(0.001f, triangle[1].depth);
-float w3 = 1.0f / std::max(0.001f, triangle[2].depth);
+    float w2 = 1.0f / std::max(0.001f, triangle[1].depth);
+    float w3 = 1.0f / std::max(0.001f, triangle[2].depth);
 
-float w = 1.0f / (alpha * w1 + beta * w2 + gamma * w3);
+    float w = 1.0f / (alpha * w1 + beta * w2 + gamma * w3);
 
-float u = w * (alpha * w1 * triangle[0].texturePoint.x +
-               beta * w2 * triangle[1].texturePoint.x +
-               gamma * w3 * triangle[2].texturePoint.x);
+    float u = w * (alpha * w1 * triangle[0].texturePoint.x +
+                    beta * w2 * triangle[1].texturePoint.x +
+                    gamma * w3 * triangle[2].texturePoint.x);
 
-float v = w * (alpha * w1 * triangle[0].texturePoint.y +
-               beta * w2 * triangle[1].texturePoint.y +
-               gamma * w3 * triangle[2].texturePoint.y);
+    float v = w * (alpha * w1 * triangle[0].texturePoint.y +
+                    beta * w2 * triangle[1].texturePoint.y +
+                    gamma * w3 * triangle[2].texturePoint.y);
 
-int texX = u * (textureMap.width - 1);
-int texY = v * (textureMap.height - 1);
+    int texX = u * (textureMap.width - 1);
+    int texY = v * (textureMap.height - 1);
 
-// Manual clamping
-if (texX < 0) texX = 0;
-if (texX >= textureMap.width) texX = textureMap.width - 1;
+    // Manual clamping
+    if (texX < 0) texX = 0;
+    if (texX >= textureMap.width) texX = textureMap.width - 1;
 
-if (texY < 0) texY = 0;
-if (texY >= textureMap.height) texY = textureMap.height - 1;
+    if (texY < 0) texY = 0;
+    if (texY >= textureMap.height) texY = textureMap.height - 1;
 
-return textureMap.pixels[texY * textureMap.width + texX];
-
-
-    
     return textureMap.pixels[texY * textureMap.width + texX];
 }
 
@@ -365,92 +361,6 @@ RayTriangleIntersection getClosestIntersection(const glm::vec3& cameraPosition, 
     return closestIntersection;
 }
 
-void Draw::computeTriangleNormals(std::vector<ModelTriangle>& triangles) {
-    for (ModelTriangle& triangle : triangles) {
-        glm::vec3 e0 = triangle.vertices[1] - triangle.vertices[0];
-        glm::vec3 e1 = triangle.vertices[2] - triangle.vertices[0];
-        triangle.normal = glm::normalize(glm::cross(e0, e1));
-    }
-}
-struct Vec3Comparator {
-    bool operator()(const glm::vec3& a, const glm::vec3& b) const {
-        if (a.x < b.x) return true;
-        if (a.x > b.x) return false;
-        if (a.y < b.y) return true;
-        if (a.y > b.y) return false;
-        return a.z < b.z;
-    }
-};
-void Draw::computeVertexNormals(std::vector<ModelTriangle>& triangles, std::vector<std::vector<glm::vec3>>& vertexNormals) {
-    // Clear and resize the vertexNormals vector
-    vertexNormals.clear();
-    vertexNormals.resize(triangles.size());
-
-    // First, map to store vertex positions to their connected triangle normals
-    std::map<glm::vec3, std::vector<glm::vec3>, Vec3Comparator> vertexToNormalsMap;
-
-    // Compute face normals and group them by vertex
-    for (size_t i = 0; i < triangles.size(); ++i) {
-        ModelTriangle& triangle = triangles[i];
-
-        // Compute the face normal
-        glm::vec3 e0 = triangle.vertices[1] - triangle.vertices[0];
-        glm::vec3 e1 = triangle.vertices[2] - triangle.vertices[0];
-        glm::vec3 faceNormal = glm::normalize(glm::cross(e0, e1));
-
-        // Add the face normal to each vertex's list of normals
-        for (int j = 0; j < 3; ++j) {
-            vertexToNormalsMap[triangle.vertices[j]].push_back(faceNormal);
-        }
-    }
-
-    // Compute vertex normals by averaging the connected face normals
-    vertexNormals.resize(triangles.size());
-    for (size_t i = 0; i < triangles.size(); ++i) {
-        ModelTriangle& triangle = triangles[i];
-        vertexNormals[i].clear();
-
-        for (int j = 0; j < 3; ++j) {
-            // Get all normals connected to this vertex
-            std::vector<glm::vec3>& connectedNormals = vertexToNormalsMap[triangle.vertices[j]];
-            
-            // Average the normals
-            glm::vec3 avgNormal(0.0f);
-            for (const auto& normal : connectedNormals) {
-                avgNormal += normal;
-            }
-            avgNormal = glm::normalize(avgNormal / static_cast<float>(connectedNormals.size()));
-            
-            vertexNormals[i].push_back(avgNormal);
-        }
-    }
-}
-
-glm::vec3 calculateBarycentricCoords(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) {
-    glm::vec3 v0 = b - a;
-    glm::vec3 v1 = c - a;
-    glm::vec3 v2 = p - a;
-
-    float d00 = glm::dot(v0, v0);
-    float d01 = glm::dot(v0, v1);
-    float d11 = glm::dot(v1, v1);
-    float d20 = glm::dot(v2, v0);
-    float d21 = glm::dot(v2, v1);
-
-    float denom = d00 * d11 - d01 * d01;
-
-    // Check if denom is very close to zero
-    if (std::abs(denom) < 1e-6f) {
-        return glm::vec3(-1.0f, -1.0f, -1.0f); // return invalid coordinates if triangle is degenerate
-    }
-
-    float v = (d11 * d20 - d01 * d21) / denom;
-    float w = (d00 * d21 - d01 * d20) / denom;
-    float u = 1.0f - v - w;
-
-    return glm::vec3(u, v, w);
-}
-
 void Draw::drawRayTracedScene(const glm::vec3& cameraPosition, float focalLength, float scaleFactor,
                               std::vector<ModelTriangle>& triangles, DrawingWindow &window, TextureMap& textureMap) {
     // Light and ight position from the model
@@ -534,7 +444,7 @@ void Draw::drawRayTracedScene(const glm::vec3& cameraPosition, float focalLength
                 glm::vec3 A = intersection.intersectedTriangle.vertices[0];
                 glm::vec3 B = intersection.intersectedTriangle.vertices[1];
                 glm::vec3 C = intersection.intersectedTriangle.vertices[2];
-                glm::vec3 barycentricCoords = calculateBarycentricCoords(intersection.intersectionPoint, A, B, C);
+                glm::vec3 barycentricCoords = Calculations::calculateBarycentricCoords(intersection.intersectionPoint, A, B, C);
 
                 bool hasValidTexture = !intersection.intersectedTriangle.texturePoints.empty() && textureMap.width > 0 && textureMap.height > 0;
                 bool hasNoTexture = std::any_of(intersection.intersectedTriangle.texturePoints.begin(), intersection.intersectedTriangle.texturePoints.end(),
@@ -800,7 +710,7 @@ void Draw::drawRayTracedSceneGouraud(const glm::vec3& cameraPosition, float foca
                 const glm::vec3& c = triangle.vertices[2];
 
                 // Calculate barycentric coordinates using the new function
-                glm::vec3 barycentricCoords = calculateBarycentricCoords(p, a, b, c);
+                glm::vec3 barycentricCoords = Calculations::calculateBarycentricCoords(p, a, b, c);
 
                 if (barycentricCoords.x < 0.0f) {
                     continue;  // Skip degenerate triangle

@@ -11,6 +11,7 @@
 #include "Interpolate.h"
 #include "RayTriangleIntersection.h"
 #include <map>
+#include "Calculations.h"
 
 #define WIDTH 320
 #define HEIGHT 240

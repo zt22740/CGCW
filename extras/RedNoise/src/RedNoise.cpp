@@ -17,7 +17,8 @@
 #include <LoadModel.h>
 #include <RayTriangleIntersection.h>
 #include <map>
-//#include <Render.h>
+#include <Calculations.h>
+#include <Rasterised.h>
 
 #define WIDTH 320
 #define HEIGHT 240
@@ -28,12 +29,6 @@
 //     }
 // }
 
-void initializeDepthBuffer(std::vector<std::vector<float>>& depthBuffer) {
-    for (auto& row : depthBuffer) {
-        std::fill(row.begin(), row.end(), 0.0f); // Start with 0, signifying no object at any pixel
-    }
-}
-
 CanvasTriangle generateRandomTriangle(int width, int height) {
     // Generate three random points within the given width and height
     CanvasPoint v0(rand() % width, rand() % height);
@@ -42,124 +37,6 @@ CanvasTriangle generateRandomTriangle(int width, int height) {
 
     // Return a CanvasTriangle constructed from these random points
     return CanvasTriangle(v0, v1, v2);
-}
-
-// void drawFilledTriangle(CanvasTriangle triangle, Colour colour, DrawingWindow &window, std::vector<std::vector<float>>& depthBuffer) {
-//     CanvasTriangle sorted = sortVertices(triangle);
-    
-//     int yStart = (int)sorted[0].y;
-//     int yEnd = (int)sorted[2].y;
-//     int yMid = (int)sorted[1].y;
-
-//     if (yStart < 0) yStart = 0;
-//     if (yEnd >= HEIGHT) yEnd = HEIGHT - 1;
-
-//     for (int y = yStart; y <= yEnd; y++) {
-//         float t1, t2;
-//         int x1, x2;
-//         float z1, z2;
-
-//         if (y < sorted[1].y) {
-//             float yDiff1 = sorted[1].y - sorted[0].y;
-//             float yDiff2 = sorted[2].y - sorted[0].y;
-//             if (yDiff1 == 0){
-//                 t1 = 0;
-//             }
-//             else{
-//                 t1 = (y - sorted[0].y)/yDiff1;
-//             }
-//             if (yDiff2 == 0){
-//                 t2 = 0;
-//             }
-//             else{
-//                 t2 = (y - sorted[0].y)/yDiff2;
-//             }
-
-//             x1 = (int)(sorted[0].x + t1 * (sorted[1].x - sorted[0].x));
-//             x2 = (int)(sorted[0].x + t2 * (sorted[2].x - sorted[0].x));
-
-//             z1 = 1.0f / (1.0f / sorted[0].depth + t1 * (1.0f / sorted[1].depth - 1.0f / sorted[0].depth));
-//             z2 = 1.0f / (1.0f / sorted[0].depth + t2 * (1.0f / sorted[2].depth - 1.0f / sorted[0].depth));
-//         } else {
-//             float yDiff1 = sorted[2].y - sorted[1].y;
-//             float yDiff2 = sorted[2].y - sorted[0].y;
-
-//             if (yDiff1 == 0){
-//                 t1 = 0;
-//             }
-//             else{
-//                 t1 = (y - sorted[1].y)/yDiff1;
-//             }
-//             if (yDiff2 == 0){
-//                 t2 = 0;
-//             }
-//             else{
-//                 t2 = (y - sorted[0].y)/yDiff2;
-//             }
-
-//             x1 = (int)(sorted[1].x + t1 * (sorted[2].x - sorted[1].x));
-//             x2 = (int)(sorted[0].x + t2 * (sorted[2].x - sorted[0].x));
-
-//             z1 = 1.0f / (1.0f / sorted[1].depth + t1 * (1.0f / sorted[2].depth - 1.0f / sorted[1].depth));
-//             z2 = 1.0f / (1.0f / sorted[0].depth + t2 * (1.0f / sorted[2].depth - 1.0f / sorted[0].depth));
-//         }
-
-//         if (x1 > x2) {
-//             std::swap(x1, x2);
-//             std::swap(z1, z2);
-//         }
-
-//         int xStart = x1;
-//         int xEnd = x2;
-
-//         if (xStart < 0) xStart = 0;
-//         if (xEnd >= WIDTH) xEnd = WIDTH - 1;
-
-//         for (int x = xStart; x <= xEnd; x++) {
-//             float t;
-//             float xDiff = x2 - x1;
-//             if (xDiff == 0){
-//                 t = 0;
-//             }
-//             else{
-//                 t = (x - x1) / xDiff;
-//             }
-//             //float t = (x - x1) / (xDiff == 0 ? 1 : xDiff);
-//             float z = 1.0f / (1.0f / z1 + t * (1.0f / z2 - 1.0f / z1));
-
-//             if (z > depthBuffer[y][x]) {
-//                 depthBuffer[y][x] = z;
-//                 uint32_t fillcolour = (255 << 24) + (uint32_t(colour.red) << 16) + (uint32_t(colour.green) << 8) + uint32_t(colour.blue);
-//                 window.setPixelColour(x, y, fillcolour);
-//             }
-//             //std::cout << "y: " << y << ", x1: " << x1 << ", x2: " << x2 << ", z1: " << z1 << ", z2: " << z2 << std::endl;
-
-//         }
-//     }
-// }
-
-void applyCameraRotation(glm::vec3 &cameraPosition, glm::mat3 &cameraOrientation, float pitch, float yaw) {
-    // Rotation matrix for pitch (X-axis rotation)
-    glm::mat3 rotationMatrixX = glm::mat3(
-        glm::vec3(1, 0, 0),
-        glm::vec3(0, cos(glm::radians(pitch)), -sin(glm::radians(pitch))),
-        glm::vec3(0, sin(glm::radians(pitch)), cos(glm::radians(pitch)))
-    );
-    
-    // Rotation matrix for yaw (Y-axis rotation)
-    glm::mat3 rotationMatrixY = glm::mat3(
-        glm::vec3(cos(glm::radians(yaw)), 0, sin(glm::radians(yaw))),
-        glm::vec3(0, 1, 0),
-        glm::vec3(-sin(glm::radians(yaw)), 0, cos(glm::radians(yaw)))
-    );
-    
-    // Apply the rotations to the camera orientation
-    cameraOrientation = rotationMatrixY * cameraOrientation;
-    cameraOrientation = rotationMatrixX * cameraOrientation;
-
-    // Apply the rotations to the camera position
-    cameraPosition = rotationMatrixY * cameraPosition;
-    cameraPosition = rotationMatrixX * cameraPosition;
 }
 
 void handleEvent(SDL_Event event, DrawingWindow &window, glm::vec3 &cameraPosition, glm::mat3 &cameraOrientation) {
@@ -213,91 +90,11 @@ void handleEvent(SDL_Event event, DrawingWindow &window, glm::vec3 &cameraPositi
 		// 	//drawFilledTriangle(triangle, color, window);
 		// 	drawTriangle(triangle, Colour(255,255,255), window);
 		// }
-        applyCameraRotation(cameraPosition, cameraOrientation, pitch, yaw);
+        Rasterised::applyCameraRotation(cameraPosition, cameraOrientation, pitch, yaw);
 	} else if (event.type == SDL_MOUSEBUTTONDOWN) {
 		window.savePPM("output.ppm");
 		window.saveBMP("output.bmp");
 	}
-}
-
-CanvasPoint projectVertexOntoCanvasPoint(const glm::vec3& cameraPosition, float focalLength, const glm::vec3& vertexPosition, const glm::mat3& cameraOrientation) {
-    // Transform to camera coordinates
-    glm::vec3 cameraCoords = (vertexPosition - cameraPosition) * cameraOrientation;
-
-    // Check if the vertex is behind the camera
-    if (cameraCoords.z > 0) {
-        return CanvasPoint(std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::quiet_NaN());
-    }
-
-    // Project the point
-    float u = -(focalLength * cameraCoords.x) / cameraCoords.z + (WIDTH / 2.0f);
-    float v = (focalLength * cameraCoords.y) / cameraCoords.z + (HEIGHT / 2.0f);
-    //std::cout << "vertexX" << u << "y" << v << "\n";
-    // Create and return the CanvasPoint
-    return CanvasPoint(u, v, -1.0f/cameraCoords.z);
-}
-
-// Update the renderPointcloud function
-void renderPointcloud(DrawingWindow &window, const std::vector<ModelTriangle>& model, const glm::vec3& cameraPosition, float focalLength, float scaleFactor, const glm::mat3& cameraOrientation) {
-    int pointsDrawn = 0;
-    int totalPoints = 0;
-
-    for (const auto& triangle : model) {
-        for (int i = 0; i < 3; i++) {
-            totalPoints++;
-            CanvasPoint projectedPoint = projectVertexOntoCanvasPoint(cameraPosition, focalLength, triangle.vertices[i], cameraOrientation);
-
-            if (projectedPoint.x != -1 && projectedPoint.y != -1) {
-                // Apply scaling factor
-                projectedPoint.x = (projectedPoint.x - window.width / 2) * scaleFactor + window.width / 2;
-                projectedPoint.y = (projectedPoint.y - window.height / 2) * scaleFactor + window.height / 2;
-                
-                // Check if the point is within the window bounds
-                if (projectedPoint.x >= 0 && projectedPoint.x < window.width && 
-                    projectedPoint.y >= 0 && projectedPoint.y < window.height) {
-                    Draw::drawPoint(window, projectedPoint, Colour(255, 255, 255)); // White color for all points
-                    pointsDrawn++;
-                }
-            }
-        }
-    }
-}
-
-void renderWireframe(DrawingWindow &window, const std::vector<ModelTriangle>& model,
-                     const glm::vec3& cameraPosition, float focalLength, float scaleFactor,
-                     std::vector<std::vector<float>>& depthBuffer, const glm::mat3& cameraOrientation) {
-    window.clearPixels();
-    initializeDepthBuffer(depthBuffer);
-    
-    for (const auto& triangle : model) {
-        CanvasTriangle canvasTriangle;
-        for (int i = 0; i < 3; i++) {
-            CanvasPoint projectedPoint = projectVertexOntoCanvasPoint(cameraPosition, focalLength, triangle.vertices[i], cameraOrientation);
-            
-            // Apply scaling factor
-            projectedPoint.x = (projectedPoint.x - window.width / 2) * scaleFactor + window.width / 2;
-            projectedPoint.y = (projectedPoint.y - window.height / 2) * scaleFactor + window.height / 2;
-            
-            // Calculate depth (inverse of z)
-           // projectedPoint.depth = 1.0f / glm::length(cameraPosition - triangle.vertices[i]);
-            
-            canvasTriangle.vertices[i] = projectedPoint;
-        }
-            //drawTriangle(canvasTriangle, triangle.colour, window);
-            Draw::drawFilledTriangle(canvasTriangle, triangle.colour, window, depthBuffer);
-    }
-}
-
-void drawOrbit(DrawingWindow &window, std::vector<ModelTriangle> &model, glm::vec3 &cameraPosition, glm::mat3 &cameraOrientation, float &orbitAngle, float focalLength, float imageScaleFactor, std::vector<std::vector<float>> &depthBuffer) {
-    window.clearPixels();
-
-    // Camera orbit logic (updates camera position and orientation)
-    orbitAngle = 0.1f;  // Adjust the orbit speed by changing this value
-
-    // Apply the rotation to camera orientation (only yaw needed for orbit)
-    float pitch = 0.0f;  // No pitch change
-    applyCameraRotation(cameraPosition, cameraOrientation, pitch, orbitAngle);
-    renderWireframe(window, model, cameraPosition, focalLength, imageScaleFactor, depthBuffer, cameraOrientation);
 }
 
 
@@ -333,9 +130,9 @@ int main(int argc, char *argv[]) {
 
     std::vector<ModelTriangle> model = LoadModel::loadOBJ(TobjFilePath, TmtlFilePath, scaleFactor);
 
-    Draw::computeTriangleNormals(model);
+    Calculations::computeTriangleNormals(model);
     std::vector<std::vector<glm::vec3>> vertexNormals;
-    Draw::computeVertexNormals(model, vertexNormals);
+    Calculations::computeVertexNormals(model, vertexNormals);
     glm::vec3 cameraPosition(0.0f, 0.0f, 4.0f); // Camera is positioned at (0, 0, 4)
     glm::mat3 cameraOrientation = glm::mat3(
     glm::vec3(1, 0, 0),  // right (X-axis)
@@ -358,11 +155,11 @@ int main(int argc, char *argv[]) {
 		// Draw::drawLine(topRight, centre, colour, window);
 		// Draw::drawLine(CanvasPoint(WIDTH/2, 0), CanvasPoint(WIDTH/2, HEIGHT), colour, window);
 		// Draw::drawLine(CanvasPoint(WIDTH/3, HEIGHT/2), CanvasPoint((WIDTH/3)*2, HEIGHT/2), colour, window);
-        // renderPointcloud(window, model, cameraPosition, focalLength, imageScaleFactor, cameraOrientation);
-        // renderWireframe(window, model, cameraPosition, focalLength, imageScaleFactor, depthBuffer, cameraOrientation);
-        //drawOrbit(window, model, cameraPosition, cameraOrientation, orbitAngle, focalLength, imageScaleFactor, depthBuffer);
+        Rasterised::renderPointcloud(window, model, cameraPosition, focalLength, imageScaleFactor, cameraOrientation);
+        // Rasterised::renderWireframe(window, model, cameraPosition, focalLength, imageScaleFactor, depthBuffer, cameraOrientation);
+        // Rasterised::drawOrbit(window, model, cameraPosition, cameraOrientation, orbitAngle, focalLength, imageScaleFactor, depthBuffer);
         // Draw::drawRayTracedScene(cameraPosition, focalLength, imageScaleFactor, model, window, textureMap);
-        Draw::drawRayTracedSceneGouraud(cameraPosition, focalLength, imageScaleFactor, model, vertexNormals, window, textureMap);
+        // Draw::drawRayTracedSceneGouraud(cameraPosition, focalLength, imageScaleFactor, model, vertexNormals, window, textureMap);
 
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();
