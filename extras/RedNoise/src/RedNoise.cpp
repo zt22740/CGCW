@@ -361,8 +361,8 @@ int main(int argc, char *argv[]) {
         // renderPointcloud(window, model, cameraPosition, focalLength, imageScaleFactor, cameraOrientation);
         // renderWireframe(window, model, cameraPosition, focalLength, imageScaleFactor, depthBuffer, cameraOrientation);
         //drawOrbit(window, model, cameraPosition, cameraOrientation, orbitAngle, focalLength, imageScaleFactor, depthBuffer);
-        Draw::drawRayTracedScene(cameraPosition, focalLength, imageScaleFactor, model, window, textureMap);
-        // Draw::drawRayTracedSceneGouraud(cameraPosition, focalLength, imageScaleFactor, model, vertexNormals, window, textureMap);
+        // Draw::drawRayTracedScene(cameraPosition, focalLength, imageScaleFactor, model, window, textureMap);
+        Draw::drawRayTracedSceneGouraud(cameraPosition, focalLength, imageScaleFactor, model, vertexNormals, window, textureMap);
 
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();
