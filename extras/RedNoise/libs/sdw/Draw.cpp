@@ -453,10 +453,14 @@ glm::vec3 calculateBarycentricCoords(const glm::vec3& p, const glm::vec3& a, con
 
 void Draw::drawRayTracedScene(const glm::vec3& cameraPosition, float focalLength, float scaleFactor,
                               std::vector<ModelTriangle>& triangles, DrawingWindow &window, TextureMap& textureMap) {
-    // Light and rendering parameters
+    // Light and ight position from the model
     const glm::vec3 lightPosition(0.0, 0.7, 0.0);
     const float shadowBias = 0.0001f;
-    const float ambientStrength = 0.2f;
+    const float shadowSoftness = 0.4f;
+    // Enhanced ambient lighting parameters
+    const float ambientStrength = 0.2f;     // Base ambient light level
+    const float ambientOcclusion = 0.3f;    // Additional ambient in corners/crevices
+    const float minLightThreshold = 0.15f;   // Minimum light intensity
     const float specularStrength = 0.5f;
     const float specularExponent = 256.0f;
 
@@ -471,30 +475,60 @@ void Draw::drawRayTracedScene(const glm::vec3& cameraPosition, float focalLength
             RayTriangleIntersection intersection = getClosestIntersection(cameraPosition, rayDirection, triangles);
 
             if (intersection.distanceFromCamera > 0) {
-                // Calculate lighting
-                glm::vec3 lightDir = glm::normalize(lightPosition - intersection.intersectionPoint);
-                glm::vec3 normal = intersection.intersectedTriangle.normal;
+                // Calculate lighting vectors
+                glm::vec3 lightDir = lightPosition - intersection.intersectionPoint;
+                float distanceToLight = glm::length(lightDir);
+                lightDir = glm::normalize(lightDir);
+                
+
+                glm::vec3& normal = intersection.intersectedTriangle.normal;
+
+                // Calculate diffuse lighting
                 float diffuse = std::max(glm::dot(normal, lightDir), 0.0f);
+                
+                // Enhanced ambient lighting calculation
+                // float ambientFactor = ambientStrength;
+                
+                // // Add extra ambient light in corners and crevices
+                // // This simulates light bouncing in confined spaces
+                // float occlusionFactor = 1.0f - std::abs(glm::dot(normal, glm::vec3(0, 1, 0)));
+                // ambientFactor += ambientOcclusion * occlusionFactor;
 
-                // Specular reflection
+                // Enhanced ambient lighting calculation
+                float ambientFactor = ambientStrength; // Base ambient light
+
+                // Optional: Refine occlusionFactor based on geometry or light direction
+                float occlusionFactor = 1.0f - glm::max(glm::dot(normal, glm::vec3(0, 1, 0)), 0.0f); // Simulated occlusion
+                ambientFactor *= (1.0f - ambientOcclusion * occlusionFactor);
+                
+                // Calculate proximity lighting (inverse square law)
+                float proximityFactor = 1.0f / (4.0f * M_PI * distanceToLight * distanceToLight);
+                proximityFactor = std::min(proximityFactor, 1.0f);
+                
+                // Specular calculation
                 glm::vec3 viewDir = glm::normalize(cameraPosition - intersection.intersectionPoint);
-                glm::vec3 reflectDir = glm::reflect(-lightDir, normal);
-                float specular = std::pow(std::max(glm::dot(viewDir, reflectDir), 0.0f), specularExponent);
-
+                glm::vec3 reflectionDir = glm::normalize(lightDir - 2.0f * glm::dot(normal, lightDir) * normal);
+                float specular = std::pow(std::max(glm::dot(viewDir, reflectionDir), 0.0f), specularExponent);
+                
                 // Shadow calculation
                 glm::vec3 shadowRayOrigin = intersection.intersectionPoint + normal * shadowBias;
                 RayTriangleIntersection shadowIntersection = getClosestIntersection(shadowRayOrigin, lightDir, triangles);
+
                 float shadowFactor = 1.0f;
-                if (shadowIntersection.distanceFromCamera > 0 &&
-                    shadowIntersection.distanceFromCamera < glm::length(lightPosition - intersection.intersectionPoint)) {
-                    shadowFactor = 0.5f;
+                if (shadowIntersection.distanceFromCamera > 0 && 
+                    shadowIntersection.distanceFromCamera < distanceToLight) {
+                    shadowFactor = shadowSoftness;
                 }
 
-                // Combine lighting components
-                float lightIntensity = ambientStrength + shadowFactor * (diffuse + specularStrength * specular);
-
-                // Clamp intensity
-                lightIntensity = glm::clamp(lightIntensity, 0.0f, 1.0f);
+                // Combine all lighting components
+                float lightIntensity = (proximityFactor * shadowFactor + diffuse * shadowFactor) * (1.0f - ambientFactor) + ambientFactor + specularStrength *specular * shadowFactor;
+                
+                
+                // Apply minimum light threshold to simulate indirect bounces
+                lightIntensity = std::max(lightIntensity, minLightThreshold);
+                
+                // Ensure final intensity doesn't exceed 1.0
+                lightIntensity = std::min(lightIntensity, 1.0f);
 
                 // Compute barycentric coordinates
                 glm::vec3 A = intersection.intersectedTriangle.vertices[0];
@@ -502,17 +536,10 @@ void Draw::drawRayTracedScene(const glm::vec3& cameraPosition, float focalLength
                 glm::vec3 C = intersection.intersectedTriangle.vertices[2];
                 glm::vec3 barycentricCoords = calculateBarycentricCoords(intersection.intersectionPoint, A, B, C);
 
-                // Construct CanvasTriangle for texture mapping
-                
-
                 bool hasValidTexture = !intersection.intersectedTriangle.texturePoints.empty() && textureMap.width > 0 && textureMap.height > 0;
-                bool hasNoTexture = std::all_of(intersection.intersectedTriangle.texturePoints.begin(), intersection.intersectedTriangle.texturePoints.end(),
+                bool hasNoTexture = std::any_of(intersection.intersectedTriangle.texturePoints.begin(), intersection.intersectedTriangle.texturePoints.end(),
                                                 [](const TexturePoint& tp) { return tp.x == 0.0f && tp.y == 0.0f; });
-                std::cout << "texture points: ";
-                for (const auto& tp : intersection.intersectedTriangle.texturePoints) {
-                    std::cout << "(" << tp.x << ", " << tp.y << ") ";
-                }
-                std::cout << std::endl;
+
                 uint32_t pixelColor;
 
                 if (hasValidTexture) {
@@ -541,18 +568,14 @@ void Draw::drawRayTracedScene(const glm::vec3& cameraPosition, float focalLength
                                  (int(std::min(texR * lightIntensity, 1.0f) * 255) << 16) | 
                                  (int(std::min(texG * lightIntensity, 1.0f) * 255) << 8) | 
                                  int(std::min(texB * lightIntensity, 1.0f) * 255);
-                } else if (hasNoTexture) {
-                    std::cout << "No texture found for triangle " << std::endl;
+                } 
+                if (hasNoTexture) {
                     const Colour& triangleColor = intersection.intersectedTriangle.colour;
                     pixelColor = (255 << 24) |
                                  ((int(std::min(triangleColor.red * lightIntensity, 255.0f))) << 16) |
                                  ((int(std::min(triangleColor.green * lightIntensity, 255.0f))) << 8) |
                                  (int(std::min(triangleColor.blue * lightIntensity, 255.0f)));
-                } else {
-                    // If no texture and no color, use a default color (e.g., black)
-                    pixelColor = 0; // Or use some other fallback
                 }
-
                 // Set the pixel color on the window
                 window.setPixelColour(x, y, pixelColor);
             } else {
