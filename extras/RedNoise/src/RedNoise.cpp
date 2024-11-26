@@ -19,6 +19,7 @@
 #include <map>
 #include <Calculations.h>
 #include <Rasterised.h>
+#include <Raytraced.h>
 
 #define WIDTH 320
 #define HEIGHT 240
@@ -133,13 +134,13 @@ int main(int argc, char *argv[]) {
     Calculations::computeTriangleNormals(model);
     std::vector<std::vector<glm::vec3>> vertexNormals;
     Calculations::computeVertexNormals(model, vertexNormals);
-    glm::vec3 cameraPosition(0.0f, 0.0f, 4.0f); // Camera is positioned at (0, 0, 4)
+    glm::vec3 cameraPosition(0.0f, 0.0f, 4.0f);
     glm::mat3 cameraOrientation = glm::mat3(
     glm::vec3(1, 0, 0),  // right (X-axis)
     glm::vec3(0, 1, 0),  // up (Y-axis)
     glm::vec3(0, 0, 1)   // forward (Z-axis)
 );
-    float focalLength = 2.0f; // Adjust based on your requirements
+    float focalLength = 2.0f;
     float orbitAngle = 0.0f;
     std::vector<std::vector<float>> depthBuffer(HEIGHT, std::vector<float>(WIDTH, 0.0f));
     // std::map<int, float> reflectiveTriangles = {
@@ -155,11 +156,11 @@ int main(int argc, char *argv[]) {
 		// Draw::drawLine(topRight, centre, colour, window);
 		// Draw::drawLine(CanvasPoint(WIDTH/2, 0), CanvasPoint(WIDTH/2, HEIGHT), colour, window);
 		// Draw::drawLine(CanvasPoint(WIDTH/3, HEIGHT/2), CanvasPoint((WIDTH/3)*2, HEIGHT/2), colour, window);
-        Rasterised::renderPointcloud(window, model, cameraPosition, focalLength, imageScaleFactor, cameraOrientation);
+        // Rasterised::renderPointcloud(window, model, cameraPosition, focalLength, imageScaleFactor, cameraOrientation);
         // Rasterised::renderWireframe(window, model, cameraPosition, focalLength, imageScaleFactor, depthBuffer, cameraOrientation);
         // Rasterised::drawOrbit(window, model, cameraPosition, cameraOrientation, orbitAngle, focalLength, imageScaleFactor, depthBuffer);
-        // Draw::drawRayTracedScene(cameraPosition, focalLength, imageScaleFactor, model, window, textureMap);
-        // Draw::drawRayTracedSceneGouraud(cameraPosition, focalLength, imageScaleFactor, model, vertexNormals, window, textureMap);
+        Raytraced::drawRayTracedScene(cameraPosition, focalLength, imageScaleFactor, model, window, textureMap);
+        // Raytraced::drawRayTracedSceneGouraud(cameraPosition, focalLength, imageScaleFactor, model, vertexNormals, window, textureMap);
 
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();
