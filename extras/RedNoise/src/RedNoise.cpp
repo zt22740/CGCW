@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
         // Rasterised::renderPointcloud(window, model, cameraPosition, focalLength, imageScaleFactor, cameraOrientation);
         // Rasterised::renderWireframe(window, model, cameraPosition, focalLength, imageScaleFactor, depthBuffer, cameraOrientation);
         // Rasterised::drawOrbit(window, model, cameraPosition, cameraOrientation, orbitAngle, focalLength, imageScaleFactor, depthBuffer);
-        Raytraced::drawRayTracedScene(cameraPosition, focalLength, imageScaleFactor, model, window, textureMap);
-        // Raytraced::drawRayTracedSceneGouraud(cameraPosition, focalLength, imageScaleFactor, model, vertexNormals, window, textureMap);
+        // Raytraced::drawRayTracedScene(cameraPosition, focalLength, imageScaleFactor, model, window, textureMap);
+        Raytraced::drawRayTracedSceneGouraud(cameraPosition, focalLength, imageScaleFactor, model, vertexNormals, window, textureMap);
 
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();
