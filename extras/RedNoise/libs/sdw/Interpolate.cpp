@@ -1,4 +1,8 @@
 #include <vector>
+#include <glm/glm.hpp> 
+#include "TexturePoint.h"
+#include "CanvasPoint.h"
+
 std::vector<float> interpolateSingleFloats(float from, float to, int numberOfValues) {
     // Create a vector to store the result
     std::vector<float> result;
