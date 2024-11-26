@@ -5,6 +5,7 @@
 #include <glm/glm.hpp> // For glm::vec3
 #include "TexturePoint.h" // Include your TexturePoint definition
 #include "CanvasPoint.h" // Include your CanvasPoint definition
+
 class Interpolate {
 public:
 // Function to interpolate single float values

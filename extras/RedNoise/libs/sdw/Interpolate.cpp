@@ -2,8 +2,9 @@
 #include <glm/glm.hpp> 
 #include "TexturePoint.h"
 #include "CanvasPoint.h"
+#include "Interpolate.h"
 
-std::vector<float> interpolateSingleFloats(float from, float to, int numberOfValues) {
+std::vector<float> Interpolate::interpolateSingleFloats(float from, float to, int numberOfValues) {
     // Create a vector to store the result
     std::vector<float> result;
     
@@ -18,7 +19,7 @@ std::vector<float> interpolateSingleFloats(float from, float to, int numberOfVal
     return result;
 }
 
-std::vector<glm::vec3> interpolateThreeElementValues(glm::vec3 from, glm::vec3 to, int numberOfValues){
+std::vector<glm::vec3> Interpolate::interpolateThreeElementValues(glm::vec3 from, glm::vec3 to, int numberOfValues){
 	std::vector<glm::vec3> result;
 
 	float step_X = (to.x - from.x) / (numberOfValues - 1);
@@ -36,7 +37,7 @@ std::vector<glm::vec3> interpolateThreeElementValues(glm::vec3 from, glm::vec3 t
     
     return result;
 }
-std::vector<TexturePoint> interpolateTexturePoints(TexturePoint from, TexturePoint to, float numberOfValues) {
+std::vector<TexturePoint> Interpolate::interpolateTexturePoints(TexturePoint from, TexturePoint to, float numberOfValues) {
     std::vector<TexturePoint> result;
 
     float stepX = (to.x - from.x) / (numberOfValues - 1);
@@ -51,7 +52,7 @@ std::vector<TexturePoint> interpolateTexturePoints(TexturePoint from, TexturePoi
     }
     return result;
 }
-std::vector<CanvasPoint> interpolateCanvasPoints(CanvasPoint from, CanvasPoint to, float numberOfValues) {
+std::vector<CanvasPoint> Interpolate::interpolateCanvasPoints(CanvasPoint from, CanvasPoint to, float numberOfValues) {
     std::vector<CanvasPoint> result;
 
     float stepX = (to.x - from.x) / (numberOfValues - 1);
