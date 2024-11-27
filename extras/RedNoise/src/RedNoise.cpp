@@ -143,11 +143,6 @@ int main(int argc, char *argv[]) {
     float focalLength = 2.0f;
     float orbitAngle = 0.0f;
     std::vector<std::vector<float>> depthBuffer(HEIGHT, std::vector<float>(WIDTH, 0.0f));
-    // std::map<int, float> reflectiveTriangles = {
-    //     {0, 1.0f}, // Fully reflective triangle
-    //     {1, 0.5f}, // Partially reflective triangle
-    //     // Add more mappings as needed
-    // };
 	while (true) {
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window, cameraPosition, cameraOrientation);
@@ -159,8 +154,8 @@ int main(int argc, char *argv[]) {
         // Rasterised::renderPointcloud(window, model, cameraPosition, focalLength, imageScaleFactor, cameraOrientation);
         // Rasterised::renderWireframe(window, model, cameraPosition, focalLength, imageScaleFactor, depthBuffer, cameraOrientation);
         // Rasterised::drawOrbit(window, model, cameraPosition, cameraOrientation, orbitAngle, focalLength, imageScaleFactor, depthBuffer);
-        // Raytraced::drawRayTracedScene(cameraPosition, focalLength, imageScaleFactor, model, window, textureMap);
-        Raytraced::drawRayTracedSceneGouraud(cameraPosition, focalLength, imageScaleFactor, model, vertexNormals, window, textureMap);
+        Raytraced::drawRayTracedScene(cameraPosition, focalLength, imageScaleFactor, model, window, textureMap, 3);
+        // Raytraced::drawRayTracedSceneGouraud(cameraPosition, focalLength, imageScaleFactor, model, vertexNormals, window, textureMap);
 
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();

@@ -17,7 +17,7 @@
 #define HEIGHT 240
 class Raytraced {
 public:
-static void drawRayTracedScene(const glm::vec3& cameraPosition, float focalLength, float scaleFactor, std::vector<ModelTriangle>& triangles, DrawingWindow &window, TextureMap& textureMap);
+static void drawRayTracedScene(const glm::vec3& cameraPosition, float focalLength, float scaleFactor, std::vector<ModelTriangle>& triangles, DrawingWindow &window, TextureMap& textureMap, int maxReflectionDepth);
 static void drawRayTracedSceneGouraud(const glm::vec3& cameraPosition, float focalLength, float scaleFactor, std::vector<ModelTriangle>& triangles, std::vector<std::vector<glm::vec3>>& vertexNormals, DrawingWindow &window, TextureMap &textureMap);
 };
 

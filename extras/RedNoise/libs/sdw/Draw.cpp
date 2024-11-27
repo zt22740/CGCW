@@ -13,7 +13,6 @@ CanvasTriangle sortVertices(const CanvasTriangle& triangle) {
     return sorted;
 }
 
-
 // Draw a line
 void Draw::drawLine(CanvasPoint from, CanvasPoint to, Colour colour, DrawingWindow &window) {
     float xDiff = to.x - from.x;
