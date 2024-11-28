@@ -1,4 +1,6 @@
 #include "Raytraced.h"
+#include <glm/gtx/string_cast.hpp>
+
 
 // Function signature for getClosestIntersection
 RayTriangleIntersection getClosestIntersection(const glm::vec3& cameraPosition, const glm::vec3& rayDirection, const std::vector<ModelTriangle>& triangles) {
@@ -79,6 +81,25 @@ float calculateSpecular(const glm::vec3& viewDir, const glm::vec3& lightDir, con
     glm::vec3 reflectionDir = glm::normalize(lightDir - 2.0f * glm::dot(normal, lightDir) * normal);
     return std::pow(std::max(glm::dot(viewDir, reflectionDir), 0.0f), specularExponent);
 }
+// float calculateSpecular(const glm::vec3& viewDir, const glm::vec3& lightDir, const glm::vec3& normal, float specularExponent) {
+//     glm::vec3 reflectionDir = glm::normalize(lightDir - 2.0f * glm::dot(normal, lightDir) * normal);
+
+//     // Compute dot product and clamp
+//     float dotProduct = glm::dot(viewDir, reflectionDir);
+//     float clampedDotProduct = glm::max(dotProduct, 0.0f);
+
+//     // Debugging information
+//     float angle = glm::degrees(glm::acos(glm::clamp(dotProduct, -1.0f, 1.0f)));
+//     std::cout << "Dot(lightDir, normal): " << glm::dot(lightDir, normal) << std::endl;
+//     std::cout << "Dot(viewDir, normal): " << glm::dot(viewDir, normal) << std::endl;
+//     std::cout << "Reflection calculation: " << glm::to_string(glm::reflect(-lightDir, normal)) << std::endl;
+//     // Adjusted specular exponent
+//     float specular = std::pow(clampedDotProduct, specularExponent);
+//     std::cout << "[Specular Calculation] Specular Value: " << specular << "\n";
+
+//     return specular;
+// }
+
 
 // Calculate shadow factor based on intersection with a shadow ray
 float calculateShadow(const glm::vec3& shadowRayOrigin, const glm::vec3& lightDir, const std::vector<ModelTriangle>& triangles, float shadowSoftness, float distanceToLight) {
@@ -186,34 +207,6 @@ uint32_t blendReflection(
            int(std::min(finalB, 1.0f) * 255);
 }
 
-float calculateShadow(const glm::vec3& shadowRayOrigin, const std::vector<glm::vec3>& lightPositions, std::vector<ModelTriangle>& triangles, float shadowSoftness, float distanceToLight) {
-    const int numSamples = 16;
-    float shadowFactor = 0.0f;
-
-    for (const auto& lightPosition : lightPositions) {
-        for (int i = 0; i < numSamples; ++i) {
-            glm::vec3 randomOffset = glm::vec3(
-                (rand() % 1000) / 1000.0f - 0.5f,
-                (rand() % 1000) / 1000.0f - 0.5f,
-                (rand() % 1000) / 1000.0f - 0.5f
-            ) * shadowSoftness;
-
-            glm::vec3 lightSample = lightPosition + randomOffset;
-            glm::vec3 lightDir = lightSample - shadowRayOrigin;
-
-            RayTriangleIntersection shadowIntersection = getClosestIntersection(shadowRayOrigin, glm::normalize(lightDir), triangles);
-
-            if (shadowIntersection.distanceFromCamera > 0 && shadowIntersection.distanceFromCamera < glm::length(lightDir)) {
-                shadowFactor += 0.0f;
-            } else {
-                shadowFactor += 1.0f;
-            }
-        }
-    }
-
-    shadowFactor /= (numSamples * lightPositions.size());
-    return shadowFactor;
-}
 uint32_t traceReflectiveRay(
     const glm::vec3& rayOrigin, 
     const glm::vec3& rayDirection, 
@@ -496,7 +489,7 @@ void Raytraced::drawRayTracedSceneGouraud(const glm::vec3& cameraPosition, float
 
                     glm::vec3 viewDir = glm::normalize(cameraPosition - vertexPos);
                     float specular = calculateSpecular(viewDir, lightDir, normal, specularExponent);
-
+                    std::cout << "Specular value: " << specular << std::endl;
                     glm::vec3 shadowRayOrigin = vertexPos + normal * shadowBias;
                     float shadowFactor = calculateShadow(shadowRayOrigin, lightDir, triangles, shadowSoftness, distanceToLight);
 
